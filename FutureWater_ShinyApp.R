@@ -331,7 +331,7 @@ server <- function(input, output, session) {
   output$map <- renderLeaflet({
     
     leaflet() %>% 
-      addProviderTiles("Stamen.TonerLite", group = "Toner Lite") %>% 
+      addProviderTiles("OpenStreetMap.DE") %>% #"Stamen.TonerLite", group = "Toner Lite"
       fitBounds(lng1 = -88.9, lat1 = 37.78, lng2 = -84.4, lat2 = 41.35)
     
   })
@@ -358,13 +358,13 @@ server <- function(input, output, session) {
       addPolygons(data = shapefile,
                   layerId = id, stroke = T, color = "black", # move this to a proxy so that whole map is not rebuilt
                   smoothFactor = 1, weight = 1, 
-                  fillColor = ~pal(pct.change), fillOpacity = 0.75, 
+                  fillColor = ~pal(pct.change), fillOpacity = 0.65, 
                   popup = paste0("<b>Ensemble Mean</b><br> % change in ", labels$label[grep(input$map.var, labels$input.var)], ": ", round(pct.change, 1)), 
-                  highlight = highlightOptions(weight = 2.5, fillOpacity = 1, bringToFront = T)) %>% 
+                  highlight = highlightOptions(weight = 2.5, fillOpacity = 0.65, bringToFront = T)) %>% 
       addLegend("bottomleft", pal = pal, values = pct.change,
                 title = paste0("% Change in<br>", labels$label[grep(input$map.var, labels$input.var)], 
                                "<br>(Ensemble Mean)"),
-                opacity = 0.75)
+                opacity = 0.65)
   })
   
   # observer to clear activeSubbasin value when watershed summary level is changed
