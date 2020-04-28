@@ -10,6 +10,9 @@ library(DT) # for data table
 library(raster) # aggregate function for changing HUC level
 library(shinyBS)
 
+# this will either need to be pulled from figshare or stored locally
+zips <- readRDS("c:/1Jen/GISdata/Zipcodes/Wabash_ZipExtents.rds")
+
 # ---------------------------------------------------------------
 # ---------------------------------------------------------------
 # user interface set up
@@ -87,17 +90,24 @@ ui <- fluidPage(
                                              "2080s" = "2080"))
                         ),
                         
-                        column(3, 
+                        column(2, 
                                selectInput("map.rcp", "Emissions Scenario:", 
                                            c("Medium (RCP 4.5)" = "45",
                                              "High (RCP 8.5)" = "85"))
                         ), 
                         
-                        column(3, 
+                        column(2, 
                                selectInput("huc", "Subwatershed Size:", 
                                            c("Small (HUC 12)" = 12,
                                              "Medium (HUC 10)" = 10, 
                                              "Large (HUC 8)" = 8))
+                        ), 
+                        
+                        column(2, 
+                               selectInput("zip", "Zip Code",
+                               choice = c('Enter Zipcode to Zoom' = '', names(zip.extents)), multiple = FALSE,
+                               selected = NULL)
+                               
                         )
                ),
                fluidRow(style = "padding-left:20px",
@@ -213,7 +223,14 @@ ui <- fluidPage(
                         column(4, offset = 1,
                                downloadButton("downloadData", "Download the data in this table")
                         )
-               )
+               ),
+               
+               br(),
+               tags$div(class="header", checked=NA,
+                        style = "text-align:left; padding-left:135px",
+                        tags$a(href="https://figshare.com/articles/Wabash_River_Basin_USGS_NHD_HUC_12_polygon_shapefile/8398394", 
+                               "Download the subbasin shapefile.", target="_blank"))
+               
                
       ) # end of data download user interface setup
     )
@@ -224,6 +241,7 @@ ui <- fluidPage(
 # load the data - shapefile for mapping, SQL database connection, annual and monthly plot .r codes
 
 basins <- readRDS(url("https://ndownloader.figshare.com/files/17406317", "r"))
+
 basins.huc8 <- aggregate(basins, by = 'HUC8')
 basins.huc10 <- aggregate(basins, by = 'HUC10')
 basins.huc8@data$id <- basins.huc8@data$HUC8
@@ -327,6 +345,10 @@ server <- function(input, output, session) {
     
   })
   
+  zip.zoom <- eventReactive(input$zip, {
+    zip.extents[names(zip.extents) == input$zip]
+  }, ignoreNULL = FALSE)
+  
   # generate the base map
   output$map <- renderLeaflet({
     
@@ -349,6 +371,9 @@ server <- function(input, output, session) {
     pal <- colorBin(palette = "RdBu", domain = pct.change, bins = mbreaks)
     
     shapefile <- mapLayer()
+    zip.ext <- zip.zoom()
+    
+    print(length(zip.ext))
     
     id <- as.vector(shapefile$id)
     
@@ -364,7 +389,19 @@ server <- function(input, output, session) {
       addLegend("bottomleft", pal = pal, values = pct.change,
                 title = paste0("% Change in<br>", labels$label[grep(input$map.var, labels$input.var)], 
                                "<br>(Ensemble Mean)"),
-                opacity = 0.65)
+                opacity = 0.65) 
+    
+    if (length(zip.ext) == 0) {
+      leafletProxy("map") %>% 
+        fitBounds(lng1 = -88.9, lat1 = 37.78, lng2 = -84.4, lat2 = 41.35)
+    } else {
+      leafletProxy("map") %>% 
+        fitBounds(lng1 = zip.ext[[1]]@xmin, 
+                  lat1 = zip.ext[[1]]@ymin, 
+                  lng2 = zip.ext[[1]]@xmax, 
+                  lat2 = zip.ext[[1]]@ymax) # this gets updated from reactive
+    }
+      
   })
   
   # observer to clear activeSubbasin value when watershed summary level is changed
