@@ -11,7 +11,7 @@ library(raster) # aggregate function for changing HUC level
 library(shinyBS)
 
 # this will either need to be pulled from figshare or stored locally
-zips <- readRDS("c:/1Jen/GISdata/Zipcodes/Wabash_ZipExtents.rds")
+zips <- readRDS(url("https://ndownloader.figshare.com/files/22453934", "r"))
 
 # ---------------------------------------------------------------
 # ---------------------------------------------------------------
