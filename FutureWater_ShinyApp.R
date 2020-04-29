@@ -105,7 +105,7 @@ ui <- fluidPage(
                         
                         column(2, 
                                selectInput("zip", "Zip Code",
-                               choice = c('Enter Zipcode to Zoom' = '', names(zip.extents)), multiple = FALSE,
+                               choice = c('Enter Zipcode to Zoom' = '', names(zips)), multiple = FALSE,
                                selected = NULL)
                                
                         )
@@ -346,7 +346,7 @@ server <- function(input, output, session) {
   })
   
   zip.zoom <- eventReactive(input$zip, {
-    zip.extents[names(zip.extents) == input$zip]
+    zips[names(zips) == input$zip]
   }, ignoreNULL = FALSE)
   
   # generate the base map
